@@ -29,7 +29,7 @@ def blockUNet(
 ):
     block = nn.Sequential()
     if relu:
-        block.add_module(f"{name}_relu", nn.Relu(inplace=True))
+        block.add_module(f"{name}_relu", nn.ReLU(inplace=True))
     else:
         block.add_module(f"{name}_leakyrelu", nn.LeakyReLU(0.2, inplace=True))
     if not transposed:
@@ -50,9 +50,9 @@ def blockUNet(
 
 
 class Generator(nn.Module):
-    def __init__(self, channelExponenet: int = 6, dropout: float = 0.0) -> None:
+    def __init__(self, channelExponent: int = 6, dropout: float = 0.0) -> None:
         super().__init__()
-        channels = int(2 ** channelExponenet + 0.5)
+        channels = int(2 ** channelExponent + 0.5)
 
         # Encoder
         self.layer1 = nn.Sequential()
@@ -131,7 +131,7 @@ class Generator(nn.Module):
         self.dlayer1 = nn.Sequential()
         self.dlayer1.add_module("dlayer1_relu", nn.ReLU(inplace=True))
         self.dlayer1.add_module(
-            "dlayer1_tconv", nn.ConvTraspose2d(channels * 2, 3, kernel_size=4, stride=2, padding=1, bias=True)
+            "dlayer1_tconv", nn.ConvTranspose2d(channels * 2, 3, kernel_size=4, stride=2, padding=1, bias=True)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

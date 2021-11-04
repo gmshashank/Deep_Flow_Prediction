@@ -7,7 +7,6 @@ fixedAirfoilNormalization = True  # use fixed max values fro dim-less airfoil da
 makeDimLess = True  # make data dimensionless
 removePOffset = True  # remove constant offsets from pressure channels
 
-
 def find_absmax(data, use_targets, x):
     maxval = 0
     for i in range(data.totalLength):
@@ -20,10 +19,9 @@ def find_absmax(data, use_targets, x):
             maxval = temp_max
     return maxval
 
-
-#     def __init__(self, dataProp=None, mode=TRAIN, dataDir="../data/train/", dataDirTest="../data/test/", shuffle=0, normMode=0):
-# self = LoaderNormalizer(self, isTest=(mode==self.TEST), dataProp=dataProp, shuffle=shuffle)
 def LoaderNormalizer(data, isTest=False, shuffle=0, dataProp=None):
+
+    mode="TRAIN"
 
     if dataProp is None:
         # load single directory
@@ -139,6 +137,7 @@ def LoaderNormalizer(data, isTest=False, shuffle=0, dataProp=None):
 
     # Normalization of Test Data
     if isTest:
+        mode="TEST"
         files = os.listdir(data.dataDirTest)
         files.sort()
         data.totalLength = len(files)
@@ -172,7 +171,7 @@ def LoaderNormalizer(data, isTest=False, shuffle=0, dataProp=None):
         data.targets[:, 1, :, :] *= 1.0 / data.max_targets_1
         data.targets[:, 2, :, :] *= 1.0 / data.max_targets_2
 
-    print("Data Stats")
+    print(f"Data Stats: {mode}")
     print(
         f"Input \t mean {np.mean(np.abs(data.inputs),keepdims=False)} \t max {np.max(np.abs(data.inputs),keepdims=False)}"
     )
@@ -186,14 +185,13 @@ def LoaderNormalizer(data, isTest=False, shuffle=0, dataProp=None):
 class TurbDataset(torch.utils.data.Dataset):
     TRAIN = 0
     TEST = 2
-
     def __init__(
         self, dataProp=None, mode=TRAIN, dataDir="../data/train/", dataDirTest="../data/test/", shuffle=0, normMode=0
     ):
         global makeDimLess, removePOffset
 
         if not (mode == self.TRAIN or mode == self.TEST):
-            print(f"Error - TurbDAtaset invalid mode = {mode}")
+            print(f"Error - TurbDataset invalid mode = {mode}")
             exit(1)
 
         if normMode == 1:
@@ -211,7 +209,7 @@ class TurbDataset(torch.utils.data.Dataset):
 
         if not self.mode == self.TEST:
             targetLength = self.totalLength - min(int(self.totalLength * 0.2), 400)
-            self.validInputs = self.inputs[targetLength]
+            self.validInputs = self.inputs[targetLength:]
             self.validTargets = self.targets[targetLength:]
             self.validLength = self.totalLength - targetLength
 
@@ -237,7 +235,6 @@ class TurbDataset(torch.utils.data.Dataset):
             a[2, :, :] *= v_norm
 
         return a
-
 
 class ValidDataset(TurbDataset):
     def __init__(self, dataset):

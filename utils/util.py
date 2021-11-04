@@ -85,7 +85,7 @@ def imageOut(filename, _outputs, _targets, saveTargets=False, normalize=False, s
 
         else:
             im = Image.fromarray(cm.magma(targets[i], bytes=True))
-            new_img.paste(im, (s + 10) * i, s * 0)
+            new_img.paste(im, ((s + 10) * i, s * 0))
             im = Image.fromarray(cm.magma(outputs[i], bytes=True))
             new_img.paste(im, ((s + 10) * i, s * 1))
 

@@ -9,7 +9,8 @@ import torch.nn as nn
 
 from datasets.dataset import TurbDataset, ValidDataset
 from models import Generator, weights_init
-from utils import computeLR, makeDirs, imageOut
+from utils import computeLR, makeDirs, imageOut, plot_loss
+
 
 def main(args=None):
 
@@ -21,9 +22,9 @@ def main(args=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
         print(torch.cuda.get_device_name(0))
-        print('Memory Usage:')
-        print('Allocated:', round(torch.cuda.memory_allocated(0)/1024**3,1), 'GB')
-        print('Cached:   ', round(torch.cuda.memory_reserved(0)/1024**3,1), 'GB')
+        print("Memory Usage:")
+        print("Allocated:", round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1), "GB")
+        print("Cached:   ", round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1), "GB")
         torch.cuda.manual_seed_all(seed)
 
     batch_size = args.batch_size
@@ -49,7 +50,7 @@ def main(args=None):
     # print(len(os.listdir(dataDir)))
     # print(len(os.listdir(dataDirTest)))
     training_data = TurbDataset(prop, shuffle=1, mode=0, dataDir=dataDir, dataDirTest=dataDirTest, normMode=1)
-    training_data.to(device=device,dtype=torch.float)
+    # training_data.to(device=device,dtype=torch.float)
     # test_data = TurbDataset(prop, shuffle=1, mode=2, dataDir=dataDir, dataDirTest=dataDirTest, normMode=1)
 
     trainLoader = torch.utils.data.DataLoader(training_data, batch_size=batch_size, shuffle=True, drop_last=True)
@@ -67,7 +68,7 @@ def main(args=None):
 
     print(f"Trainable params: {params}.")
 
-    netG.double()       #initialize a model’s weights with DoubleTensors
+    # netG.double()       #initialize a model’s weights with DoubleTensors
     netG.apply(weights_init)
     netG.to(device)
 
@@ -161,9 +162,11 @@ def main(args=None):
 
     print("Saving the trained Model")
     torch.save(netG.state_dict(), "modelG.pth")
-    traced_model=torch.jit.trace(netG.to("cpu"),torch.randn(1,64,1,1))
+    traced_model = torch.jit.trace(netG.to("cpu"), torch.randn(1, 3, 128, 128))
     traced_model.save("modelG_traced.pth")
+    plot_loss(history_L1, history_L1val)
     print("Completed Training and saved trained model.")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

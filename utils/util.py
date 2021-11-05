@@ -4,6 +4,7 @@ import numpy as np
 import os
 import re
 from PIL import Image
+import matplotlib.pyplot as plt
 from matplotlib import cm
 
 # append line to log file
@@ -19,6 +20,17 @@ def log(file, line, doPrint=True):
 def resetLog(file):
     f = open(file, "w")
     f.close()
+
+
+def plot_loss(history_L1, history_L1val):
+    l1train = np.asarray(history_L1)
+    l1vali = np.asarray(history_L1val)
+
+    plt.figure()
+    plt.plot(np.arange(l1train.shape[0]), l1train, "b", label="Training loss")
+    plt.plot(np.arange(l1vali.shape[0]), l1vali, "g", label="Validation loss")
+    plt.legend()
+    plt.show()
 
 
 def computeLR(i, epochs, minLR, maxLR):

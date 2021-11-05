@@ -28,7 +28,7 @@ def main(args=None):
 
     batch_size = args.batch_size
     lrG = args.lr
-    channelExponent = args.channel_exponenet
+    channelExponent = args.channel_exponent
     epochs = args.num_epochs
     dataDir = args.data_dir + "train/"
     dataDirTest = args.data_dir + "test/"
@@ -49,7 +49,8 @@ def main(args=None):
     # print(len(os.listdir(dataDir)))
     # print(len(os.listdir(dataDirTest)))
     training_data = TurbDataset(prop, shuffle=1, mode=0, dataDir=dataDir, dataDirTest=dataDirTest, normMode=1)
-    test_data = TurbDataset(prop, shuffle=1, mode=2, dataDir=dataDir, dataDirTest=dataDirTest, normMode=1)
+    training_data.to(device=device,dtype=torch.float)
+    # test_data = TurbDataset(prop, shuffle=1, mode=2, dataDir=dataDir, dataDirTest=dataDirTest, normMode=1)
 
     trainLoader = torch.utils.data.DataLoader(training_data, batch_size=batch_size, shuffle=True, drop_last=True)
     print(f"Training batches: {len(trainLoader)}")
@@ -66,6 +67,7 @@ def main(args=None):
 
     print(f"Trainable params: {params}.")
 
+    netG.double()       #initialize a model’s weights with DoubleTensors
     netG.apply(weights_init)
     netG.to(device)
 
@@ -80,14 +82,14 @@ def main(args=None):
     targets = torch.FloatTensor(batch_size, image_channels, image_height, image_width)
     targets = targets.to(device)
 
-    print(device)
-    print(inputs.device)
-    print(targets.device)
+    # print(device)
+    # print(inputs.device)
+    # print(targets.device)
 
     history_L1 = []
     history_L1val = []
 
-    print("Training the network")
+    print("Training the network on {device}")
 
     for epoch in range(epochs):
         netG.train()
@@ -157,13 +159,16 @@ def main(args=None):
                 f"newtork_expo_{channelExponent}_{epoch}.pth",
             )
 
+    print("Saving the trained Model")
     torch.save(netG.state_dict(), "modelG.pth")
+    traced_model=torch.jit.trace(netG.to("cpu"),torch.randn(1,64,1,1))
+    traced_model.save("modelG_traced.pth")
     print("Completed Training and saved trained model.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch_size", type=int, default=10, help="Batch Size")
-    parser.add_argument("--channel_exponenet", type=int, default=5, help="Channel Exponent")
+    parser.add_argument("--channel_exponent", type=int, default=5, help="Channel Exponent")
     parser.add_argument("--data_dir", type=str, default="data/", help="Path to data directory")
     parser.add_argument("--num_epochs", type=int, default=10, help="Number of Epochs")
     parser.add_argument("--lr", type=float, default=0.0006, help="Learning Rate")

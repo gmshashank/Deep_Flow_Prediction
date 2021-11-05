@@ -38,7 +38,7 @@ def blockUNet(
             nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=2, padding=padding, bias=True),
         )
     else:
-        block.add_module(f"{name}_upsam", nn.Upsample(scale_factor=2, mode="bilinear",align_corners=True))
+        block.add_module(f"{name}_upsam", nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True))
         block.add_module(
             f"{name}_tconv",
             nn.Conv2d(in_channels, out_channels, kernel_size=(kernel_size - 1), stride=1, padding=padding, bias=True),
@@ -47,8 +47,9 @@ def blockUNet(
         block.add_module(f"{name}_bn", nn.BatchNorm2d(out_channels))
     if dropout:
         block.add_module(f"{name}_dropout", nn.Dropout2d(dropout, inplace=True))
-    
+
     return block
+
 
 class Generator(nn.Module):
     def __init__(self, channelExponent: int = 6, dropout: float = 0.0) -> None:

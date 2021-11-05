@@ -24,7 +24,7 @@ sudo apt-get -y install openfoam8 gmsh
 
 ## Input Data
 
-![Airfoil and Mesh](assets/Airfoil.png)
+![Airfoil and Mesh](assets/Airfoil.PNG)
 An example UIUC database entry with the corresponding simulation mesh. The region around the airfoil considered for CNN inference is highlighted with a red square.
 
 Each Ground Truth triple contains Pressure, X, and Y components of the Velocity. Each component and data set is normalized independently for visualization, thus these images show the structure of the solutions rather than the range of values across diﬀerent solutions.

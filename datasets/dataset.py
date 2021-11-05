@@ -7,6 +7,7 @@ fixedAirfoilNormalization = True  # use fixed max values fro dim-less airfoil da
 makeDimLess = True  # make data dimensionless
 removePOffset = True  # remove constant offsets from pressure channels
 
+
 def find_absmax(data, use_targets, x):
     maxval = 0
     for i in range(data.totalLength):
@@ -19,9 +20,10 @@ def find_absmax(data, use_targets, x):
             maxval = temp_max
     return maxval
 
+
 def LoaderNormalizer(data, isTest=False, shuffle=0, dataProp=None):
 
-    mode="TRAIN"
+    mode = "TRAIN"
 
     if dataProp is None:
         # load single directory
@@ -137,7 +139,7 @@ def LoaderNormalizer(data, isTest=False, shuffle=0, dataProp=None):
 
     # Normalization of Test Data
     if isTest:
-        mode="TEST"
+        mode = "TEST"
         files = os.listdir(data.dataDirTest)
         files.sort()
         data.totalLength = len(files)
@@ -185,6 +187,7 @@ def LoaderNormalizer(data, isTest=False, shuffle=0, dataProp=None):
 class TurbDataset(torch.utils.data.Dataset):
     TRAIN = 0
     TEST = 2
+
     def __init__(
         self, dataProp=None, mode=TRAIN, dataDir="../data/train/", dataDirTest="../data/test/", shuffle=0, normMode=0
     ):
@@ -235,6 +238,7 @@ class TurbDataset(torch.utils.data.Dataset):
             a[2, :, :] *= v_norm
 
         return a
+
 
 class ValidDataset(TurbDataset):
     def __init__(self, dataset):

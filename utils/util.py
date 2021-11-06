@@ -111,3 +111,91 @@ def imageOut(filename, _outputs, _targets, saveTargets=False, normalize=False, s
     if saveMontage:
         new_img.save(filename + ".png")
         BW_img.save(filename + "_bw.png")
+
+def imageOut(filename, _outputs, saveTargets=True, normalize=False):
+    outputs = np.copy(_outputs)
+    for i in range(3):
+        outputs[i] = np.flipud(outputs[i].transpose())
+        min_value = np.min(outputs[i])
+        max_value = np.max(outputs[i])
+        if normalize:
+            outputs[i] -= min_value
+            max_value -= min_value
+            outputs[i] /= max_value
+        else: # from -1,1 to 0,1
+            outputs[i] -= -1.
+            outputs[i] /= 2.
+
+        suffix = ""
+        if i==0:
+            suffix = "_pressure"
+        elif i==1:
+            suffix = "_velX"
+        else:
+            suffix = "_velY"
+
+        im = Image.fromarray(cm.magma(outputs[i], bytes=True))
+        im = im.resize((128,128))
+        im.save(filename + suffix + "_pred.png")
+
+def saveOutput(output_arr, target_arr):
+    if target_arr is None:
+        imageOut("./result/result", output_arr)
+    else:
+        imageOut("./result/result", output_arr, target_arr, normalize=False, saveMontage=True) # write normalized with error
+
+
+class InputData:
+    def __init__(self, npz_arr, removePOffset=True, makeDimLess=True):
+        self.input = None
+        self.target = None
+
+        self.max_inputs_0 = 100.0
+        self.max_inputs_1 = 38.12
+        self.max_inputs_2 = 1.0
+
+        self.max_targets_0 = 4.65 
+        self.max_targets_1 = 2.04
+        self.max_targets_2 = 2.37
+
+        if npz_arr.shape[0] >= 3:
+            self.input = npz_arr[0:3]
+        if npz_arr.shape[0] == 6:
+            self.target = npz_arr[3:6]
+
+        self.removePOffset = removePOffset
+        self.makeDimLess = makeDimLess
+
+        self.normalize()
+
+    def normalize(self):
+        if self.target is not None:
+            if self.removePOffset:
+                self.target[0,:,:] -= np.mean(self.target[0,:,:]) # remove offset
+                self.target[0,:,:] -= self.target[0,:,:] * self.input[2,:,:]  # pressure * mask
+
+            if self.makeDimLess: 
+                v_norm = ( np.max(np.abs(self.input[0,:,:]))**2 + np.max(np.abs(self.input[1,:,:]))**2 )**0.5 
+                self.target[0,:,:] /= v_norm**2
+                self.target[1,:,:] /= v_norm
+                self.target[2,:,:] /= v_norm
+
+            self.target[0,:,:] *= (1.0/self.max_targets_0)
+            self.target[1,:,:] *= (1.0/self.max_targets_1)
+            self.target[2,:,:] *= (1.0/self.max_targets_2)
+
+        if self.input is not None:
+            self.input[0, :, :] *= 1 / self.max_inputs_0
+            self.input[1, :, :] *= 1 / self.max_inputs_1
+
+    def denormalize(self, data, v_norm):
+        a = data.copy()
+        a[0,:,:] /= (1.0/self.max_targets_0)
+        a[1,:,:] /= (1.0/self.max_targets_1)
+        a[2,:,:] /= (1.0/self.max_targets_2)
+
+        if self.makeDimLess:
+            a[0,:,:] *= v_norm**2
+            a[1,:,:] *= v_norm
+            a[2,:,:] *= v_norm
+        return a

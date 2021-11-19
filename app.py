@@ -5,118 +5,112 @@ import torch
 import numpy as np
 from imageio import imread
 from PIL import Image
-import os  
-
+import os
 
 from models import Generator
-from utils.util import InputData,saveOutput
+from utils.util import InputData, saveOutput
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-
 @st.cache
-def getModel(expo):
-    netG = Generator(channelExponent=expo).to(device)
-    netG.load_state_dict(torch.load(f'models/model_w_{expo}', map_location=device))
+def getModel(channelExponent=5, trained_model=None):
+
+    print("Loading the trained Model")
+    netG = Generator(channelExponent=int(channelExponent)).to(device)
+
+    if trained_model is None:
+        trained_model_path = f"trained_models/modelG_{channelExponent}.pth"
+    # else:
+    #     print("else trained_model ")
+    #     trained_model_path=f"trained_models/{trained_model}"
+
+    netG.load_state_dict(torch.load(trained_model_path, map_location=device))
     netG.eval()
     return netG
 
+
 def predictFlow(np_arr, model):
     input_data = InputData(np_arr, removePOffset=True, makeDimLess=True)
-    input_arr, target_arr = input_data.input, input_data.target 
-    # input_arr, target_arr = input_arr.float().to(device), target_arr.float().to(device)
-    input_tr = torch.tensor(input_arr)
-    input_tr=input_tr.to(device)
-    input_batch = input_tr.unsqueeze(0)
+    input_arr, target_arr = input_data.input, input_data.target
+    input_tensor = torch.tensor(input_arr)
+    input_tensor = input_tensor.to(device)
+    input_batch = input_tensor.unsqueeze(0)
 
-    print('Running inference')
+    print("Running Inference Model")
     output_batch = model(input_batch.float())
-    
+
     output_tr = output_batch.squeeze(0)
-    output_tr=output_tr.to(device)
+    output_tr = output_tr.to(device)
     output_arr = output_tr.detach().cpu().numpy()
 
-    print('Saving output')
+    print("Saving output")
     saveOutput(output_arr, target_arr)
-
     return 1
 
-def solver(np_arr, expo=5):
-    model = getModel(expo)
-    resid = predictFlow(np_arr, model)
-    return resid
+
+def solver(np_arr, trained_model=None, channelExponent=5):
+    model = getModel(channelExponent, trained_model)
+    result_id = predictFlow(np_arr, model)
+    return result_id
 
 
+result_path = os.path.join(os.getcwd(), "results")
+if not (os.path.exists(result_path)):
+    os.makedirs(result_path)
 
-st.sidebar.title('Deep Flow Prediction App')
+st.sidebar.title("Deep Flow Prediction Application")
 
-expo=st.sidebar.selectbox(
-    "Select channelExponent",
-    ("5","7")
-)
-ux = st.sidebar.number_input('Enter Ux')
-uy = st.sidebar.number_input('Enter Uy')
+trained_model = None
+channelExponent = st.sidebar.selectbox("Select channelExponent", ("5", "7"))
+# st.sidebar.write("OR")
+# trained_model_list = os.listdir("./trained_models/")
+# trained_model = st.sidebar.selectbox("Model",trained_model_list)
 
-airfoil_files = os.listdir('./airfoils')[:100]
-airfoil_files = [x.replace('.png', '') for x in airfoil_files]
+ux = st.sidebar.number_input("Enter Ux")
+uy = st.sidebar.number_input("Enter Uy")
 
-# airfoil_type = st.sidebar.multiselect('Airfoil type', airfoil_files)
-airfoil_type = st.sidebar.selectbox('Airfoil type', airfoil_files)
+airfoil_files = os.listdir("./example/airfoils")[:100]
+airfoil_files = [x.replace(".png", "") for x in airfoil_files]
 
-st.sidebar.write('OR')
-airfoil_img_file = st.sidebar.file_uploader('Choose airfoil file (Binary Image)', type='png')
+airfoil_type = st.sidebar.selectbox("Airfoil type", airfoil_files)
 
+st.sidebar.write("OR")
+airfoil_img_file = st.sidebar.file_uploader("Choose airfoil file (Binary Image)", type="png")
 
+my_expander = st.sidebar.expander("Upload input file in npz format")
+upload_file = my_expander.file_uploader("Choose file...")
 
-
-my_expander = st.sidebar.expander('Upload input file in npz format')
-# my_expander.write('Upload input file in npz format')
-upload_file = my_expander.file_uploader('Choose file...')
-
-
-st.sidebar.write('')
-sts = st.sidebar.button('Submit')
-
-
+st.sidebar.write("")
+sts = st.sidebar.button("Submit")
 
 if sts:
-
     if upload_file:
         file = upload_file.read()
-        tfile = tempfile.NamedTemporaryFile(delete=False) 
+        tfile = tempfile.NamedTemporaryFile(delete=False)
         tfile.write(file)
-        np_arr = np.load(tfile.name)['a']
-        resid = solver(np_arr, expo=expo)
+        np_arr = np.load(tfile.name)["a"]
+        resid = solver(np_arr, channelExponent=channelExponent)
         print(resid)
         if resid == 1:
-            st.image('result/result.png')
-            # st.balloons()
+            st.image("results/result.png")
 
     elif ux and uy and (airfoil_type or airfoil_img_file):
         if airfoil_type:
-            im = imread(f'airfoils/{airfoil_type}.png')
+            im = imread(f"example/airfoils/{airfoil_type}.png")
         else:
             image = Image.open(airfoil_img_file)
-            im = np.array(image)  
-        
+            im = np.array(image)
+
         np_im = np.array(im)
         np_im = np_im / np.max(np_im)
 
-
         c1, c2 = st.columns(2)
-        c1.header('Airfoil Geometry')
-        print(np_im.shape)
+        c1.header("Airfoil Geometry")
+        print(f"Input Image shape: {np_im.shape}")
         c1.image(np_im, use_column_width=True)
-        # c2.header('Lift-to-Drag Ratio')
-        # c2.write('0.37')
 
-        # st.header('Lift-to-Drag Ratio is 0.37') 
-        # st.header('') 
-
-        
-        np_im = np.flipud(np_im).transpose() # in model's input format
-
+        np_im = np.flipud(np_im).transpose()  # in model's input format
 
         ux = float(ux)
         uy = float(uy)
@@ -128,16 +122,15 @@ if sts:
 
         np_arr = np.stack((fx, fy, np_im))
 
-        resid = solver(np_arr, expo=5)
-        print(resid)
+        result_id = solver(np_arr, trained_model, channelExponent)
+        print(result_id)
 
-
-        if resid == 1:
+        if result_id == 1:
+            print("displaying results")
             col1, col2, col3 = st.columns(3)
-            col1.header('Velocity X')
-            col1.image('result/result_velX_pred.png', use_column_width=True)
-            col2.header('Velocity Y')
-            col2.image('result/result_velY_pred.png', use_column_width=True)
-            col3.header('Pressure')
-            col3.image('result/result_pressure_pred.png', use_column_width=True)
-            # st.balloons()
+            col1.header("Velocity X")
+            col1.image("results/result_velX_pred.png", use_column_width=True)
+            col2.header("Velocity Y")
+            col2.image("results/result_velY_pred.png", use_column_width=True)
+            col3.header("Pressure")
+            col3.image("results/result_pressure_pred.png", use_column_width=True)

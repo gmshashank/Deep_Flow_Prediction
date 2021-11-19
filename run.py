@@ -161,7 +161,7 @@ def main(args=None):
             )
 
     print("Saving the trained Model")
-    torch.save(netG.state_dict(), "modelG.pth")
+    torch.save(netG.state_dict(), f"modelG_{channelExponent}.pth")
     traced_model = torch.jit.trace(netG.to("cpu"), torch.randn(1, 3, 128, 128))
     traced_model.save("modelG_traced.pth")
     plot_loss(history_L1, history_L1val)

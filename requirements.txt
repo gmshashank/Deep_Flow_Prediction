@@ -1,9 +1,8 @@
-requests==2.26.0
-numpy==1.21.2
 imageio==2.10.3
-pytorch_lightning==1.4.8
+requests==2.26.0
+matplotlib==3.4.3
 torch==1.9.0
 torchvision==0.10.0a0
-matplotlib==3.4.3
 streamlit==1.1.0
+numpy==1.21.2
 Pillow==8.4.0

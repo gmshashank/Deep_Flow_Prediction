@@ -52,13 +52,13 @@ def blockUNet(
 
 
 class Generator(nn.Module):
-    def __init__(self, channelExponent: int = 6, dropout: float = 0.0) -> None:
-        super().__init__()
+    def __init__(self, channelExponent=6, dropout=0.0):
+        super(Generator, self).__init__()
         channels = int(2 ** channelExponent + 0.5)
 
-        # Encoder
         self.layer1 = nn.Sequential()
-        self.layer1.add_module("layer1_conv", nn.Conv2d(3, channels, kernel_size=4, stride=2, padding=1, bias=True))
+        self.layer1.add_module("layer1_conv", nn.Conv2d(3, channels, 4, 2, 1, bias=True))
+
         self.layer2 = blockUNet(
             channels, channels * 2, "layer2", transposed=False, bn=True, relu=False, dropout=dropout
         )
@@ -69,7 +69,15 @@ class Generator(nn.Module):
             channels * 2, channels * 4, "layer3", transposed=False, bn=True, relu=False, dropout=dropout
         )
         self.layer4 = blockUNet(
-            channels * 4, channels * 8, "layer4", transposed=False, bn=True, relu=False, dropout=dropout, kernel_size=4
+            channels * 4,
+            channels * 8,
+            "layer4",
+            transposed=False,
+            bn=True,
+            relu=False,
+            dropout=dropout,
+            kernel_size=2,
+            padding=0,
         )
         self.layer5 = blockUNet(
             channels * 8,
@@ -87,14 +95,13 @@ class Generator(nn.Module):
             channels * 8,
             "layer6",
             transposed=False,
-            bn=True,
+            bn=False,
             relu=False,
             dropout=dropout,
             kernel_size=2,
             padding=0,
         )
 
-        # Decoder
         self.dlayer6 = blockUNet(
             channels * 8,
             channels * 8,
@@ -124,7 +131,7 @@ class Generator(nn.Module):
             channels * 8, channels * 2, "dlayer3", transposed=True, bn=True, relu=True, dropout=dropout
         )
         self.dlayer2b = blockUNet(
-            channels * 4, channels * 2, "dlayer3b", transposed=True, bn=True, relu=True, dropout=dropout
+            channels * 4, channels * 2, "dlayer2b", transposed=True, bn=True, relu=True, dropout=dropout
         )
         self.dlayer2 = blockUNet(
             channels * 4, channels, "dlayer2", transposed=True, bn=True, relu=True, dropout=dropout
@@ -132,11 +139,9 @@ class Generator(nn.Module):
 
         self.dlayer1 = nn.Sequential()
         self.dlayer1.add_module("dlayer1_relu", nn.ReLU(inplace=True))
-        self.dlayer1.add_module(
-            "dlayer1_tconv", nn.ConvTranspose2d(channels * 2, 3, kernel_size=4, stride=2, padding=1, bias=True)
-        )
+        self.dlayer1.add_module("dlayer1_tconv", nn.ConvTranspose2d(channels * 2, 3, 4, 2, 1, bias=True))
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x):
         out1 = self.layer1(x)
         out2 = self.layer2(out1)
         out2b = self.layer2b(out2)

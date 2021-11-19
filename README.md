@@ -80,9 +80,16 @@ Below you can download a large-scale training data set, and the test data set us
 The U-net architecture receives three constant ﬁelds as input, each containing the airfoil shape. The black arrows denote convolutional layers, while orange arrows indicate skip connections. The inferred outputs have exactly the same size as the inputs, and are compared to the targets with an L1 loss. The target data sets on the right are pre-computed with OpenFOAM.
 
 ```bash
-python run.py --num_epochs=1 --batch_size=10 
+python run.py --num_epochs=100 --batch_size=10 
 ```
 
+## Inference
+
+The trained model should be placed in *trained_models* folder. It should the have the name as *modelG_{channelExponent}.pth*  
+The trained model can be tested in the Streamlit interface using the following command:
+```bash
+streamlit run app.py
+```
 
 ## Summary
 
@@ -91,22 +98,10 @@ Based on this framework, you should be able to train deep learning models that y
 ## Reference
 
 Original codebase [Deep-Flow-Prediction](https://github.com/thunil/Deep-Flow-Prediction)
-
 Bilinear Upsample (https://discuss.pytorch.org/t/what-we-should-use-align-corners-false/22663/9)
-
-
 
 ## Acknowledgements
 
-Authors:
-*N. Thuerey, K. Weissenow, L. Prantl, Xiangyu Hu*
-
-```
-@article{thuerey2020deepFlowPred,
-  title={Deep learning methods for Reynolds-averaged Navier--Stokes simulations of airfoil flows},
-  author={Thuerey, Nils and Wei{\ss}enow, Konstantin and Prantl, Lukas and Hu, Xiangyu},
-  journal={AIAA Journal}, year={2020},
-  volume={58}, number={1}, pages={25--36},
-  publisher={American Institute of Aeronautics and Astronautics}
-}
-```
+[Thuerey Group](https://ge.in.tum.de/) , 
+[Hu Group](https://www.aer.mw.tum.de/abteilungen/komplexe-fluide/) , 
+[TUM](https://www.tum.de)
